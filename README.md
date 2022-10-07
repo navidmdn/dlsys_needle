@@ -1,2 +1,2 @@
 # dlsys_needle
-Homeworks/projects solutions from deep learning systems course
+Homeworks/projects solutions for [https://dlsyscourse.org/](deep learning systems course).

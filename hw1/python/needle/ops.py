@@ -250,14 +250,10 @@ def negate(a):
 
 class Log(TensorOp):
     def compute(self, a):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return array_api.log(a)
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return multiply(divide(broadcast_to(Tensor([1.0,]), node.inputs[0].shape), node.inputs[0]), out_grad)
 
 
 def log(a):

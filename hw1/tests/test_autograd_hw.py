@@ -323,6 +323,8 @@ def test_reshape_backward():
 def test_negate_backward():
     gradient_check(ndl.negate, ndl.Tensor(np.random.randn(5, 4)))
 
+def test_log_backward():
+    gradient_check(ndl.log, ndl.Tensor(np.random.randn(5, 4)))
 
 def test_transpose_backward():
     gradient_check(ndl.transpose, ndl.Tensor(np.random.randn(3, 5, 4)), axes=(1, 2))

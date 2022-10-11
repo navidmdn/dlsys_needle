@@ -1,6 +1,6 @@
 """Core data structures."""
 import needle
-from typing import List, Optional, NamedTuple, Tuple, Union
+from typing import List, Optional, NamedTuple, Tuple, Union, Dict
 from collections import namedtuple
 import numpy
 
@@ -398,9 +398,21 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    for node in reverse_topo_order:
+        node_adj = sum_node_list(node_to_output_grads_list[node])
+        node.grad = node_adj
+
+        if node.is_leaf():
+            continue
+
+        grads = node.op.gradient(node_adj, node)
+        grad_contribs = [grads,] if isinstance(grads, Tensor) else grads
+
+        for inp, grad in zip(list(node.inputs), grad_contribs):
+            if inp in node_to_output_grads_list:
+                node_to_output_grads_list[inp].append(grad)
+            else:
+                node_to_output_grads_list[inp] = [grad]
 
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
@@ -411,17 +423,23 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     after all its predecessors are traversed due to post-order DFS, we get a topological
     sort.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    visited = set()
+    topo_order = []
+    for root in node_list:
+        topo_sort_dfs(root, visited, topo_order)
+    return topo_order
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    if node in visited:
+        return
+    for predecessor in node.inputs:
+        topo_sort_dfs(predecessor, visited, topo_order)
 
+    visited.add(node)
+    topo_order.append(node)
 
 ##############################
 ####### Helper Methods #######

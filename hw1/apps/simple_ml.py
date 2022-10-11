@@ -103,9 +103,6 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
 
     i = 0
 
-    w1 = W1.realize_cached_data()
-    w2 = W2.realize_cached_data()
-
     while i < X.shape[0]:
 
         cur_x = X[i:i + batch]

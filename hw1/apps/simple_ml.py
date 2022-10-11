@@ -121,6 +121,9 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         W1 -= lr * W1.grad.detach()
         W2 -= lr * W2.grad.detach()
 
+        W1 = W1.detach()
+        W2 = W2.detach()
+
         if i % 1000 == 0:
             print(f"iteration: {i}/{X.shape[0]} - LOSS: {loss.detach()}")
         i += batch

@@ -399,12 +399,14 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
     for node in reverse_topo_order:
+
         node_adj = sum_node_list(node_to_output_grads_list[node])
         node.grad = node_adj
 
         if node.is_leaf():
             continue
 
+        # print(f"calculating gradient of {node.op} with shape {node.shape} with inputs {[n.shape for n in node.inputs]} adj shape: {node_adj.shape}")
         grads = node.op.gradient(node_adj, node)
         grad_contribs = [grads,] if isinstance(grads, Tensor) else grads
 

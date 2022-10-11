@@ -1,13 +1,14 @@
 import struct
 import gzip
 import numpy as np
+import shutil
 
 import sys
 sys.path.append('python/')
 import needle as ndl
 
 
-def parse_mnist(image_filesname, label_filename):
+def parse_mnist(image_filename, label_filename):
     """ Read an images and labels file in MNIST format.  See this page:
     http://yann.lecun.com/exdb/mnist/ for a description of the file format.
 
@@ -29,9 +30,28 @@ def parse_mnist(image_filesname, label_filename):
                 labels of the examples.  Values should be of type np.int8 and
                 for MNIST will contain the values 0-9.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    def decomp(gz_filename):
+        file_decomp = gz_filename.replace('.gz', '')
+        with gzip.open(gz_filename, 'rb') as f_in:
+            with open(file_decomp, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        return file_decomp
+
+    label_decomp_filename = decomp(label_filename)
+    img_decomp_filename = decomp(image_filename)
+
+    with open(label_decomp_filename, "rb") as lbpath:
+        magic, n = struct.unpack(">II", lbpath.read(8))
+        labels = np.fromfile(lbpath, dtype=np.uint8)
+
+    with open(img_decomp_filename, "rb") as imgpath:
+        magic, num, rows, cols = struct.unpack(">IIII", imgpath.read(16))
+        images = np.fromfile(imgpath, dtype=np.uint8).reshape(num, rows * cols).astype(np.float32)
+        images /= 255.0
+        images = images.astype(np.float32)
+
+    return images, labels
 
 
 def softmax_loss(Z, y_one_hot):
@@ -50,9 +70,11 @@ def softmax_loss(Z, y_one_hot):
     Returns:
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    true_logit = ndl.reshape(ndl.summation(ndl.multiply(Z, y_one_hot), 1), (-1, 1))
+    #TODO: maybe add automatic broadcast for add operation
+    loss = ndl.log(ndl.summation(ndl.exp(Z-ndl.broadcast_to(true_logit, Z.shape)), axes=1))
+    return ndl.summation(loss)/Z.shape[0]
 
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):

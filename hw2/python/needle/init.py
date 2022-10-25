@@ -2,7 +2,6 @@ import math
 import needle as ndl
 
 
-
 def rand(*shape, low=0.0, high=1.0, device=None, dtype="float32", requires_grad=False):
     """ Generate random numbers uniform between low and high """
     device = ndl.cpu() if device is None else device
@@ -48,26 +47,23 @@ def one_hot(n, i, device=None, dtype="float32", requires_grad=False):
 
 
 def xavier_uniform(fan_in, fan_out, gain=1.0, **kwargs):
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    max_val = gain * math.sqrt(6 / (fan_in + fan_out))
+    return rand(fan_in, fan_out, low=-max_val, high=max_val, **kwargs)
 
 
 def xavier_normal(fan_in, fan_out, gain=1.0, **kwargs):
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    std = gain * math.sqrt(2 / (fan_in + fan_out))
+    return randn(fan_in, fan_out, mean=0, std=std, **kwargs)
 
 
 def kaiming_uniform(fan_in, fan_out, nonlinearity="relu", **kwargs):
     assert nonlinearity == "relu", "Only relu supported currently"
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    bound = math.sqrt(2) * math.sqrt(3 / fan_in)
+    return rand(fan_in, fan_out, low=-bound, high=bound, **kwargs)
 
 
 def kaiming_normal(fan_in, fan_out, nonlinearity="relu", **kwargs):
     assert nonlinearity == "relu", "Only relu supported currently"
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    std = math.sqrt(2) / math.sqrt(fan_in)
+    return randn(fan_in, fan_out, mean=0, std=std, **kwargs)
+

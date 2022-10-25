@@ -135,9 +135,7 @@ class PowerScalar(TensorOp):
         return a ** self.scalar
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return self.scalar * power_scalar(node.inputs[0], self.scalar-1)
 
 
 def power_scalar(a, scalar):
@@ -246,11 +244,12 @@ def broadcast_to(a, shape):
 
 
 class Summation(TensorOp):
-    def __init__(self, axes: Optional[tuple] = None):
+    def __init__(self, axes: Optional[tuple] = None, keepdims=False):
         self.axes = axes
+        self.keepdims = keepdims
 
     def compute(self, a):
-        return array_api.sum(a, axis=self.axes)
+        return array_api.sum(a, axis=self.axes, keepdims=self.keepdims)
 
     def gradient(self, out_grad: Tensor, node):
         inp = node.inputs[0]
@@ -267,8 +266,8 @@ class Summation(TensorOp):
         return res
 
 
-def summation(a, axes=None):
-    return Summation(axes)(a)
+def summation(a, axes=None, keepdims=False):
+    return Summation(axes, keepdims)(a)
 
 
 class MatMul(TensorOp):
@@ -337,6 +336,7 @@ class ReLU(TensorOp):
         return array_api.maximum(a, array_api.array(0))
 
     def gradient(self, out_grad, node):
+
         inp = node.inputs[0].realize_cached_data()
         inp_derivative = Tensor(array_api.where(inp <= 0, 0.0, 1.0))
         return multiply(out_grad, inp_derivative)
@@ -346,20 +346,47 @@ def relu(a):
     return ReLU()(a)
 
 
+class Max(TensorOp):
+    def __init__(self, axes: Optional[tuple] = None, keepdims=False):
+        self.axes = axes
+        self.keepdims = keepdims
+
+    def compute(self, Z):
+        return array_api.max(Z, axis=self.axes, keepdims=self.keepdims)
+
+    def gradient(self, out_grad, node):
+        x = node.inputs[0]
+        zeros = array_api.zeros(x.shape)
+        zeros[array_api.argmax(x.realize_cached_data())] = 1.0
+        max_t = Tensor(zeros)
+        return broadcast_to(out_grad, x.shape) * max_t
+
+
+def maximum(a, axes=None, keepdims=False):
+    return Max(axes, keepdims)(a)
+
 
 class LogSumExp(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
 
     def compute(self, Z):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        out_shape = array_api.sum(Z, axis=self.axes).shape
+        _logsumexp = array_api.log(array_api.sum(array_api.exp(Z - array_api.max(Z, axis=self.axes, keepdims=True)),
+                                                 axis=self.axes, keepdims=True))
+        _logsumexp += array_api.max(Z, axis=self.axes, keepdims=True)
+        return _logsumexp.reshape(out_shape)
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        x = node.inputs[0]
+        _max = maximum(x, axes=self.axes, keepdims=True)
+        x = x - broadcast_to(_max, x.shape)
+        nomtr = exp(x)
+        _sum = summation(exp(x), axes=self.axes, keepdims=True)
+        denomtr = broadcast_to(_sum, nomtr.shape)
+        return (nomtr/(denomtr + 1e-10))*broadcast_to(reshape(out_grad, _sum.shape), denomtr.shape)
+
+
 
 
 def logsumexp(a, axes=None):

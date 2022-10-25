@@ -49,8 +49,6 @@ def _child_modules(value: object) -> List["Module"]:
         return []
 
 
-
-
 class Module:
     def __init__(self):
         self.training = True
@@ -86,16 +84,19 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.weight = init.kaiming_uniform(in_features, out_features, device=device, dtype=dtype)
+        self.has_bias = bias
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        if self.has_bias:
+            self.bias = ops.reshape(init.kaiming_uniform(out_features, 1,  device=device, dtype=dtype), (1, out_features))
 
     def forward(self, X: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        out = ops.matmul(X, self.weight)
+        if self.has_bias:
+            bias = ops.broadcast_to(self.bias, out.shape)
+            out += bias
 
+        return out
 
 
 class Flatten(Module):
@@ -107,9 +108,7 @@ class Flatten(Module):
 
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return ops.relu(x)
 
 
 class Sequential(Module):
@@ -118,9 +117,9 @@ class Sequential(Module):
         self.modules = modules
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        for module in self.modules:
+            x = module(x)
+        return x
 
 
 class SoftmaxLoss(Module):

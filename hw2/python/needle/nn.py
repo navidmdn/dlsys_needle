@@ -100,10 +100,8 @@ class Linear(Module):
 
 
 class Flatten(Module):
-    def forward(self, X):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+    def forward(self, X: Tensor):
+        return X.reshape((X.shape[0], -1))
 
 
 class ReLU(Module):
@@ -124,9 +122,11 @@ class Sequential(Module):
 
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        nclass = logits.shape[-1]
+        zy = ops.summation(init.one_hot(nclass, y) * logits, axes=(1,), keepdims=True)
+        loss = ops.logsumexp(logits - ops.broadcast_to(zy, logits.shape), axes=(1,))
+        loss = ops.summation(loss) / loss.shape[0]
+        return loss
 
 
 
@@ -152,14 +152,16 @@ class LayerNorm1d(Module):
         super().__init__()
         self.dim = dim
         self.eps = eps
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
+        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        mean = ops.summation(x, axes=(1,), keepdims=True) / x.shape[1] #bsx1
+        var = ops.summation((x - ops.broadcast_to(mean, x.shape))**2, axes=(1,), keepdims=True) / x.shape[1]
+        norm = (x - ops.broadcast_to(mean, x.shape)) / ((ops.broadcast_to(var, x.shape) + self.eps) ** 0.5)
+        y = ops.broadcast_to(self.weight, x.shape) * norm + ops.broadcast_to(self.bias, x.shape)
+
+        return y
 
 
 class Dropout(Module):

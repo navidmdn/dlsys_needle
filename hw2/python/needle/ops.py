@@ -135,7 +135,7 @@ class PowerScalar(TensorOp):
         return a ** self.scalar
 
     def gradient(self, out_grad, node):
-        return self.scalar * power_scalar(node.inputs[0], self.scalar-1)
+        return self.scalar * power_scalar(node.inputs[0], self.scalar-1) * out_grad
 
 
 def power_scalar(a, scalar):
@@ -384,7 +384,7 @@ class LogSumExp(TensorOp):
         nomtr = exp(x)
         _sum = summation(exp(x), axes=self.axes, keepdims=True)
         denomtr = broadcast_to(_sum, nomtr.shape)
-        return (nomtr/(denomtr + 1e-10))*broadcast_to(reshape(out_grad, _sum.shape), denomtr.shape)
+        return (nomtr/(denomtr + 1e-9))*broadcast_to(reshape(out_grad, _sum.shape), denomtr.shape)
 
 
 

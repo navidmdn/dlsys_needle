@@ -66,8 +66,10 @@ class Adam(Optimizer):
                 self.m[param] = 0.0
                 self.v[param] = 0.0
 
-            self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * (param.grad.data.numpy() + self.weight_decay * param.data.numpy())
-            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (param.grad.data.numpy() + self.weight_decay * param.data.numpy())**2
+            self.m[param] = self.beta1 * self.m[param] + (1 - self.beta1) * (param.grad.data.numpy() +
+                                                                             self.weight_decay * param.data.numpy())
+            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (param.grad.data.numpy() +
+                                                                             self.weight_decay * param.data.numpy())**2
 
             if self.bias_correction:
                 m_hat = self.m[param] / (1 - self.beta1 ** self.t)

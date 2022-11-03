@@ -135,11 +135,12 @@ class BatchNorm1d(Module):
         super().__init__()
         self.dim = dim
         self.eps = eps
+        self.dtype = dtype
         self.momentum = momentum
         self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
         self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
-        self.running_mean = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=False))
-        self.running_var = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=False))
+        self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False)
+        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
@@ -148,7 +149,6 @@ class BatchNorm1d(Module):
 
             cur_mean = ops.reshape(cur_mean, (-1,))
             cur_var = ops.reshape(cur_var, (-1,))
-
             self.running_mean.data = (1 - self.momentum) * self.running_mean.data + self.momentum * cur_mean.data
             self.running_var.data = (1 - self.momentum) * self.running_var.data + self.momentum * cur_var.data
 
@@ -186,7 +186,7 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
-            mask = init.randb(*x.shape, p=1-self.p) / (1 - self.p)
+            mask = init.randb(*x.shape, p=1-self.p, dtype='float32') / (1 - self.p)
             y = x * mask
             return y
 

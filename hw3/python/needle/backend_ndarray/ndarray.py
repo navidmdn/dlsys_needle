@@ -5,6 +5,7 @@ import numpy as np
 from . import ndarray_backend_numpy
 from . import ndarray_backend_cpu
 
+
 # math.prod not in Python 3.7
 def prod(x):
     return reduce(operator.mul, x, 1)
@@ -200,8 +201,8 @@ class NDArray:
         """Return true if array is compact in memory and internal size equals product
         of the shape dimensions"""
         return (
-            self._strides == self.compact_strides(self._shape)
-            and prod(self.shape) == self._handle.size
+                self._strides == self.compact_strides(self._shape)
+                and prod(self.shape) == self._handle.size
         )
 
     def compact(self):
@@ -240,9 +241,21 @@ class NDArray:
             NDArray : reshaped array; this will point to the same memory as the original NDArray.
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_strides = [1, ]
+        i = len(new_shape) - 2
+        while i >= 0:
+            new_strides.append(new_strides[-1] * new_shape[i + 1])
+            i -= 1
+        new_strides = tuple(new_strides[::-1])
+        print(new_shape, self.shape, new_strides)
+
+        return self.make(
+            shape=new_shape,
+            strides=new_strides,
+            device=self.device,
+            handle=self._handle,
+            offset=self._offset
+        )
 
     def permute(self, new_axes):
         """
@@ -485,7 +498,7 @@ class NDArray:
 
         # if the matrix is aligned, use tiled matrix multiplication
         if hasattr(self.device, "matmul_tiled") and all(
-            d % self.device.__tile_size__ == 0 for d in (m, n, p)
+                d % self.device.__tile_size__ == 0 for d in (m, n, p)
         ):
 
             def tile(a, tile):
@@ -502,8 +515,8 @@ class NDArray:
 
             return (
                 out.permute((0, 2, 1, 3))
-                .compact()
-                .reshape((self.shape[0], other.shape[1]))
+                    .compact()
+                    .reshape((self.shape[0], other.shape[1]))
             )
 
         else:
@@ -549,7 +562,7 @@ def array(a, dtype="float32", device=None):
 
 def empty(shape, dtype="float32", device=None):
     device = device if device is not None else default_device()
-    return devie.empty(shape, dtype)
+    return device.empty(shape, dtype)
 
 
 def full(shape, fill_value, dtype="float32", device=None):

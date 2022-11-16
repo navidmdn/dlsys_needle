@@ -44,7 +44,20 @@ void Fill(AlignedArray* out, scalar_t val) {
 }
 
 
+void print_vec(std::vector<int> vec) {
+    for (auto v : vec) {
+        std::cout << v << " ";
+    }
+    std::cout << std::endl;
+}
 
+
+void print_vec(std::vector<uint32_t> vec) {
+    for (auto v : vec) {
+        std::cout << v << " ";
+    }
+    std::cout << std::endl;
+}
 
 void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> shape,
              std::vector<uint32_t> strides, size_t offset) {
@@ -62,9 +75,51 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> sha
    *  void (you need to modify out directly, rather than returning anything; this is true for all the
    *  function will implement here, so we won't repeat this note.)
    */
-  /// BEGIN YOUR SOLUTION
-  
-  /// END YOUR SOLUTION
+
+
+   // initialize loop state for dynamic nested iterations
+   std::vector<int> loop_state;
+   for (uint32_t i = 0; i < shape.size(); i++) {
+        loop_state.push_back(0);
+   }
+
+   //std::cout<<"SHAPE:"<<std::endl;
+   //print_vec(shape);
+
+   size_t out_idx = 0;
+   while (true) {
+
+        size_t mapped_idx = offset;
+        for (size_t i = 0; i < strides.size(); i++)
+            mapped_idx += strides[i] * loop_state[i];
+
+        //print_vec(strides);
+        //print_vec(loop_state);
+
+        //std::cout << "offset: " << offset << std::endl;
+        //std::cout << mapped_idx << ":" << a.ptr[mapped_idx] << std::endl;
+        out->ptr[out_idx] = a.ptr[mapped_idx];
+        out_idx++;
+
+        int check_i = shape.size()-1;
+        int carry = 1;
+
+        while (carry) {
+
+            carry = 0;
+            if (check_i < 0)
+                return;
+            loop_state[check_i]++;
+            if (loop_state[check_i] >= shape[check_i]) {
+                loop_state[check_i] = 0;
+                carry = 1;
+            }
+            check_i--;
+        }
+
+   }
+
+
 }
 
 void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> shape,
@@ -79,9 +134,48 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t
    *   strides: strides of the *out* array (not a, which has compact strides)
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
-  /// BEGIN YOUR SOLUTION
-  
-  /// END YOUR SOLUTION
+
+   std::vector<int> loop_state;
+   for (uint32_t i = 0; i < shape.size(); i++) {
+        loop_state.push_back(0);
+   }
+
+   //std::cout<<"SHAPE:"<<std::endl;
+   //print_vec(shape);
+
+   size_t out_idx = 0;
+   while (true) {
+
+        size_t mapped_idx = offset;
+        for (size_t i = 0; i < strides.size(); i++)
+            mapped_idx += strides[i] * loop_state[i];
+
+        //print_vec(strides);
+        //print_vec(loop_state);
+
+        //std::cout << "offset: " << offset << std::endl;
+        //std::cout << mapped_idx << ":" << a.ptr[mapped_idx] << std::endl;
+        out->ptr[mapped_idx] = a.ptr[out_idx];
+        out_idx++;
+
+        int check_i = shape.size()-1;
+        int carry = 1;
+
+        while (carry) {
+
+            carry = 0;
+            if (check_i < 0)
+                return;
+            loop_state[check_i]++;
+            if (loop_state[check_i] >= shape[check_i]) {
+                loop_state[check_i] = 0;
+                carry = 1;
+            }
+            check_i--;
+        }
+
+   }
+
 }
 
 void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vector<uint32_t> shape,
@@ -101,8 +195,49 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    */
 
   /// BEGIN YOUR SOLUTION
-  
+
   /// END YOUR SOLUTION
+
+     std::vector<int> loop_state;
+   for (uint32_t i = 0; i < shape.size(); i++) {
+        loop_state.push_back(0);
+   }
+
+   //std::cout<<"SHAPE:"<<std::endl;
+   //print_vec(shape);
+
+   size_t out_idx = 0;
+   while (true) {
+
+        size_t mapped_idx = offset;
+        for (size_t i = 0; i < strides.size(); i++)
+            mapped_idx += strides[i] * loop_state[i];
+
+        //print_vec(strides);
+        //print_vec(loop_state);
+
+        //std::cout << "offset: " << offset << std::endl;
+        //std::cout << mapped_idx << ":" << a.ptr[mapped_idx] << std::endl;
+        out->ptr[mapped_idx] = val;
+        out_idx++;
+
+        int check_i = shape.size()-1;
+        int carry = 1;
+
+        while (carry) {
+
+            carry = 0;
+            if (check_i < 0)
+                return;
+            loop_state[check_i]++;
+            if (loop_state[check_i] >= shape[check_i]) {
+                loop_state[check_i] = 0;
+                carry = 1;
+            }
+            check_i--;
+        }
+
+   }
 }
 
 void EwiseAdd(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {

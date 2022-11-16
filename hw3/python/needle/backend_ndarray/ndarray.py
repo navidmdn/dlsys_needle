@@ -227,6 +227,16 @@ class NDArray:
     def flat(self):
         return self.reshape((self.size,))
 
+    @staticmethod
+    def calculate_stride_by_shape(shape):
+        strides = [1, ]
+        i = len(shape) - 2
+        while i >= 0:
+            strides.append(strides[-1] * shape[i + 1])
+            i -= 1
+        strides = tuple(strides[::-1])
+        return strides
+
     def reshape(self, new_shape):
         """
         Reshape the matrix without copying memory.  This will return a matrix
@@ -241,14 +251,7 @@ class NDArray:
             NDArray : reshaped array; this will point to the same memory as the original NDArray.
         """
 
-        new_strides = [1, ]
-        i = len(new_shape) - 2
-        while i >= 0:
-            new_strides.append(new_strides[-1] * new_shape[i + 1])
-            i -= 1
-        new_strides = tuple(new_strides[::-1])
-        print(new_shape, self.shape, new_strides)
-
+        new_strides = self.calculate_stride_by_shape(new_shape)
         return self.make(
             shape=new_shape,
             strides=new_strides,
@@ -276,9 +279,16 @@ class NDArray:
             strides changed).
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_shape = tuple([self.shape[i] for i in new_axes])
+        new_strides = tuple([self.strides[i] for i in new_axes])
+
+        return self.make(
+            shape=new_shape,
+            strides=new_strides,
+            device=self.device,
+            handle=self._handle,
+            offset=self._offset
+        )
 
     def broadcast_to(self, new_shape):
         """
@@ -297,11 +307,19 @@ class NDArray:
             point to the same memory as the original array.
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        for i, d in enumerate(new_shape):
+            if self.shape[i] != 1:
+                assert self.shape[i] == new_shape[i]
 
-    ### Get and set elements
+        new_strides = tuple([s if d > 1 else 0 for s, d in zip(self.strides, self.shape)])
+
+        return self.make(
+            shape=new_shape,
+            strides=new_strides,
+            device=self.device,
+            handle=self._handle,
+            offset=self._offset
+        )
 
     def process_slice(self, sl, dim):
         """ Convert a slice to an explicit start/stop/step """
@@ -360,9 +378,24 @@ class NDArray:
         )
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_shape = []
+        for i, (d, s) in enumerate(zip(self.shape, idxs)):
+            new_d = math.ceil((min(s.stop, d) - max(0, s.start)) / s.step)
+            new_shape.append(new_d)
+
+        offset = 0
+        new_strides = []
+        for stride, sl in zip(self.strides, idxs):
+            offset += stride * sl.start
+            new_strides.append(stride if sl.step == 1 else stride * sl.step)
+
+        return self.make(
+            shape=new_shape,
+            strides=tuple(new_strides),
+            device=self.device,
+            handle=self._handle,
+            offset=offset
+        )
 
     def __setitem__(self, idxs, other):
         """Set the values of a view into an array, using the same semantics
@@ -562,7 +595,7 @@ def array(a, dtype="float32", device=None):
 
 def empty(shape, dtype="float32", device=None):
     device = device if device is not None else default_device()
-    return device.empty(shape, dtype)
+    return devie.empty(shape, dtype)
 
 
 def full(shape, fill_value, dtype="float32", device=None):

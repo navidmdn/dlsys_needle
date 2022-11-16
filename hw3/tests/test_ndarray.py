@@ -66,7 +66,7 @@ def test_compact(params, device):
     shape, np_fn, nd_fn = params['shape'], params['np_fn'], params['nd_fn']
     _A = np.random.randint(low=0, high=10, size=shape)
     A = nd.array(_A, device=device)
-    
+
     lhs = nd_fn(A).compact()
     assert lhs.is_compact(), "array is not compact"
 
@@ -287,7 +287,8 @@ def test_broadcast_to(device, params):
     check_same_memory(A, rhs)
 
 
-matmul_dims = [(16, 16, 16), 
+matmul_dims = [
+    (16, 16, 16),
     (8, 8, 8), 
     (1, 2, 3), 
     (3, 4, 5), 

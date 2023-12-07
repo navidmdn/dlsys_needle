@@ -348,7 +348,6 @@ def test_nn_conv_forward(s, cin, cout, k, stride, device):
     import torch
     f = ndl.nn.Conv(cin, cout, k, stride=stride, device=device)
     x = ndl.init.rand(10, cin, s, s, device=device)
-
     g = torch.nn.Conv2d(cin, cout, k, stride=stride, padding=k//2)
     g.weight.data = torch.tensor(f.weight.cached_data.numpy().transpose(3, 2, 0, 1))
     g.bias.data = torch.tensor(f.bias.cached_data.numpy())
@@ -394,6 +393,7 @@ def test_nn_conv_backward(s, cin, cout, k, stride, device):
 
 
 op_conv_shapes = [
+    ( (1, 3, 3, 1), (2, 2, 1, 1), 1, 1 ),
     ( (3, 14, 14, 8), (3, 3, 8, 16), 1, 0 ),
     ( (3, 14, 14, 8), (3, 3, 8, 16), 1, 1 ),
     ( (3, 16, 16, 8), (3, 3, 8, 16), 1, 2 ),

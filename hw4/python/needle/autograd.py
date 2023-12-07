@@ -1,3 +1,4 @@
+
 """Core data structures."""
 import needle
 from typing import List, Optional, NamedTuple, Tuple, Union
@@ -20,17 +21,14 @@ class Op:
 
     def compute(self, *args: Tuple[NDArray]):
         """Calculate forward pass of operator.
-
         Parameters
         ----------
         input: np.ndarray
             A list of input arrays to the function
-
         Returns
         -------
         output: nd.array
             Array output of the operation
-
         """
         raise NotImplementedError()
 
@@ -38,15 +36,12 @@ class Op:
         self, out_grad: "Value", node: "Value"
     ) -> Union["Value", Tuple["Value"]]:
         """Compute partial adjoint for each input value for a given output adjoint.
-
         Parameters
         ----------
         out_grad: Value
             The adjoint wrt to the output value.
-
         node: Value
             The value node of forward evaluation.
-
         Returns
         -------
         input_grads: Value or Tuple[Value]
@@ -67,7 +62,7 @@ class Op:
 
 
 class TensorOp(Op):
-    """ Op class specialized to output tensors, will be alterate subclasses for other structures """
+    """ Op class specialized to output tensors, will be alternate subclasses for other structures """
 
     def __call__(self, *args):
         return Tensor.make_from_op(self, args)
@@ -151,17 +146,10 @@ class Value:
             value.realize_cached_data()
         return value
 
-    def numpy(self):
-        data = self.realize_cached_data()
-        if array_api is numpy:
-            return data
-        return data.numpy() if not isinstance(data, tuple) else [x.numpy() for x in data]
-
 
 ### Not needed in HW1
 class TensorTuple(Value):
     """Represent a tuple of tensors.
-
     To keep things simple, we do not support nested tuples.
     """
 
@@ -199,7 +187,7 @@ class Tensor(Value):
         array,
         *,
         device: Optional[Device] = None,
-        dtype="float32",
+        dtype=None,
         requires_grad=True,
         **kwargs
     ):
@@ -283,6 +271,7 @@ class Tensor(Value):
     @property
     def device(self):
         data = self.realize_cached_data()
+        # numpy array always sits on cpu
         if array_api is numpy:
             return default_device()
         return data.device
@@ -301,6 +290,12 @@ class Tensor(Value):
     def __str__(self):
         return self.realize_cached_data().__str__()
 
+    def numpy(self):
+        data = self.realize_cached_data()
+        if array_api is numpy:
+            return data
+        return data.numpy()
+
     def __add__(self, other):
         if isinstance(other, Tensor):
             return needle.ops.EWiseAdd()(self, other)
@@ -314,21 +309,16 @@ class Tensor(Value):
             return needle.ops.MulScalar(other)(self)
 
     def __pow__(self, other):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        if isinstance(other, Tensor):
+            raise NotImplementedError()
+        else:
+            return needle.ops.PowerScalar(other)(self)
 
     def __sub__(self, other):
         if isinstance(other, Tensor):
             return needle.ops.EWiseAdd()(self, needle.ops.Negate()(other))
         else:
             return needle.ops.AddScalar(-other)(self)
-       
-    def __rsub__(self, other):
-        if isinstance(other, Tensor):
-            return needle.ops.EWiseAdd()(needle.ops.Negate()(self), other)
-        else:
-            return needle.ops.AddScalar(other)(-self)
 
     def __truediv__(self, other):
         if isinstance(other, Tensor):
@@ -359,8 +349,8 @@ class Tensor(Value):
 
     __radd__ = __add__
     __rmul__ = __mul__
+    __rsub__ = __sub__
     __rmatmul__ = __matmul__
-
 
 def compute_gradient_of_variables(output_tensor, out_grad):
     """Take gradient of output node with respect to each node in node_list.
@@ -373,12 +363,28 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     # We are really taking a derivative of the scalar reduce_sum(output_node)
     # instead of the vector output_node. But this is the common case for loss function.
     node_to_output_grads_list[output_tensor] = [out_grad]
+
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    for node in reverse_topo_order:
+
+        node_adj = sum_node_list(node_to_output_grads_list[node])
+        node.grad = node_adj
+
+        if node.is_leaf():
+            continue
+
+        # print(f"calculating gradient of {node.op} with shape {node.shape} with inputs {[n.shape for n in node.inputs]} adj shape: {node_adj.shape}")
+        
+        grads = node.op.gradient(node_adj, node)
+        grad_contribs = [grads,] if isinstance(grads, Tensor) or isinstance(grads, TensorTuple) else grads
+        
+        for inp, grad in zip(list(node.inputs), grad_contribs):
+            if inp in node_to_output_grads_list:
+                node_to_output_grads_list[inp].append(grad)
+            else:
+                node_to_output_grads_list[inp] = [grad]
 
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
@@ -389,17 +395,27 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     after all its predecessors are traversed due to post-order DFS, we get a topological
     sort.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    visited = set()
+    topo_order = []
+    for root in node_list:
+        topo_sort_dfs(root, visited, topo_order)
+    return topo_order
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    if node in visited:
+        return
+    for predecessor in node.inputs:
+        topo_sort_dfs(predecessor, visited, topo_order)
 
+    visited.add(node)
+    topo_order.append(node)
+
+##############################
+####### Helper Methods #######
+##############################
 
 ##############################
 ####### Helper Methods #######
